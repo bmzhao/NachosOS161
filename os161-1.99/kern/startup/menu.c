@@ -214,6 +214,20 @@ cmd_chdir(int nargs, char **args)
 }
 
 /*
+ * Command for debug thread enable
+ */
+ static
+ int
+ cmd_debugthread(int nargs,char **args)
+ {
+ 	(void)nargs;
+ 	(void)args;
+
+ 	dbflags = 0x0010;
+ 	return 0;
+ }
+
+/*
  * Command for printing the current directory.
  */
 static
@@ -549,6 +563,9 @@ static struct {
 	{ "exit",	cmd_quit },
 	{ "halt",	cmd_quit },
 
+	/* added in ASST0 */
+	{ "dth",	cmd_debugthread},
+
 #if OPT_SYNCHPROBS
 	/* in-kernel synchronization problem(s) */
 	{ "sp1",	whalemating },
@@ -590,6 +607,7 @@ static struct {
 
 	{ NULL, NULL }
 };
+
 
 /*
  * Process a single command.
@@ -709,3 +727,4 @@ menu(char *args)
 		menu_execute(buf, 0);
 	}
 }
+
