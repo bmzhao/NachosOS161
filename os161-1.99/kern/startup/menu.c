@@ -223,7 +223,7 @@ cmd_chdir(int nargs, char **args)
  	(void)nargs;
  	(void)args;
 
- 	dbflags = 0x0010;
+ 	dbflags = dbflags | 0x0010;
  	return 0;
  }
 
