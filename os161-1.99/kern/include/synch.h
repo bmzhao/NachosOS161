@@ -36,6 +36,7 @@
 
 
 #include <spinlock.h>
+#include <opt-A1.h>
 
 /*
  * Dijkstra-style semaphore.
@@ -44,13 +45,14 @@
  * internally.
  */
 struct semaphore {
-        char *sem_name;
-	struct wchan *sem_wchan;
-	struct spinlock sem_lock;
-        volatile int sem_count;
+    char *sem_name;
+    struct wchan *sem_wchan;
+    struct spinlock sem_lock;
+    volatile int sem_count;
 };
 
 struct semaphore *sem_create(const char *name, int initial_count);
+
 void sem_destroy(struct semaphore *);
 
 /*
@@ -60,6 +62,7 @@ void sem_destroy(struct semaphore *);
  *     V (verhogen): increment count.
  */
 void P(struct semaphore *);
+
 void V(struct semaphore *);
 
 
@@ -73,12 +76,21 @@ void V(struct semaphore *);
  * (should be) made internally.
  */
 struct lock {
-        char *lk_name;
-        // add what you need here
-        // (don't forget to mark things volatile as needed)
+#if OPT_A1
+    char* lk_name;
+    struct wchan *lk_wchan;
+    struct spinlock lk_lock;
+    volatile int lk_value;
+    thread* lk_curthread;
+#else
+    char *lk_name;
+    // add what you need here
+    // (don't forget to mark things volatile as needed)
+#endif OPT_A1
 };
 
 struct lock *lock_create(const char *name);
+
 void lock_acquire(struct lock *);
 
 /*
@@ -87,13 +99,15 @@ void lock_acquire(struct lock *);
  *                   same time.
  *    lock_release - Free the lock. Only the thread holding the lock may do
  *                   this.
- *    lock_do_i_hold - Return true if the current thread holds the lock; 
+ *    lock_do_i_hold - Return true if the current thread holds the lock;
  *                   false otherwise.
  *
  * These operations must be atomic. You get to write them.
  */
 void lock_release(struct lock *);
+
 bool lock_do_i_hold(struct lock *);
+
 void lock_destroy(struct lock *);
 
 
@@ -112,12 +126,13 @@ void lock_destroy(struct lock *);
  */
 
 struct cv {
-        char *cv_name;
-        // add what you need here
-        // (don't forget to mark things volatile as needed)
+    char *cv_name;
+    // add what you need here
+    // (don't forget to mark things volatile as needed)
 };
 
 struct cv *cv_create(const char *name);
+
 void cv_destroy(struct cv *);
 
 /*
@@ -127,14 +142,16 @@ void cv_destroy(struct cv *);
  *    cv_signal    - Wake up one thread that's sleeping on this CV.
  *    cv_broadcast - Wake up all threads sleeping on this CV.
  *
- * For all three operations, the current thread must hold the lock passed 
+ * For all three operations, the current thread must hold the lock passed
  * in. Note that under normal circumstances the same lock should be used
  * on all operations with any particular CV.
  *
  * These operations must be atomic. You get to write them.
  */
 void cv_wait(struct cv *cv, struct lock *lock);
+
 void cv_signal(struct cv *cv, struct lock *lock);
+
 void cv_broadcast(struct cv *cv, struct lock *lock);
 
 
