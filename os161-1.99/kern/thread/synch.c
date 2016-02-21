@@ -238,7 +238,7 @@ lock_acquire(struct lock *lock) {
         spinlock_acquire(&lock->lk_lock);
     }
     KASSERT(lock->lk_value == 1);
-    lock->lk_value--;
+    lock->lk_value = 0;
     lock->lk_curthread = curthread;
     spinlock_release(&lock->lk_lock);
 #else
@@ -255,7 +255,7 @@ lock_release(struct lock *lock) {
 
     spinlock_acquire(&lock->lk_lock);
     if (lock->lk_curthread == curthread){
-        lock->lk_value++;
+        lock->lk_value = 1;
         KASSERT(lock->lk_value == 1);
         wchan_wakeone(lock->lk_wchan);
     }
