@@ -81,7 +81,7 @@ struct lock {
     struct wchan *lk_wchan;
     struct spinlock lk_lock;
     volatile int lk_value;
-    thread* lk_curthread;
+    struct thread* lk_curthread;
 #else
     char *lk_name;
     // add what you need here
