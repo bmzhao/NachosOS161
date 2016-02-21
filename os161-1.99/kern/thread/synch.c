@@ -189,7 +189,7 @@ lock_create(const char *name) {
         return NULL;
     }
 
-#endif OPT_A1
+#endif
 }
 
 void
@@ -209,7 +209,7 @@ lock_destroy(struct lock *lock) {
     kfree(lock->lk_name);
     kfree(lock);
 
-#endif OPT_A1
+#endif
 
 }
 
@@ -243,7 +243,7 @@ lock_acquire(struct lock *lock) {
     spinlock_release(&lock->lk_lock);
 #else
 
-#endif OPT_A1
+#endif
 }
 
 void
@@ -262,7 +262,7 @@ lock_release(struct lock *lock) {
     spinlock_release(&lock->lk_lock);
 #else
 
-#endif OPT_A1
+#endif
 }
 
 bool
@@ -281,7 +281,7 @@ lock_do_i_hold(struct lock *lock) {
     return return_value;
 #else
 
-#endif OPT_A1
+#endif
 }
 
 ////////////////////////////////////////////////////////////
