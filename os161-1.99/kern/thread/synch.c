@@ -290,6 +290,33 @@ lock_do_i_hold(struct lock *lock) {
 
 struct cv *
 cv_create(const char *name) {
+#if OPT_A1
+    struct cv *cv;
+
+    cv = kmalloc(sizeof(struct cv));
+    if (cv == NULL) {
+        return NULL;
+    }
+
+    cv->cv_name = kstrdup(name);
+    if (cv->cv_name == NULL) {
+        kfree(cv);
+        return NULL;
+    }
+
+    cv->cv_wchan = wchan_create(cv->cv_name);
+    if (cv->cv_wchan == NULL) {
+        kfree(cv->cv_name);
+        kfree(cv);
+        return NULL;
+    }
+
+    spinlock_init(&cv->cv_spinlock);
+    // add stuff here as needed
+
+    return cv;
+
+#else
     struct cv *cv;
 
     cv = kmalloc(sizeof(struct cv));
@@ -306,35 +333,84 @@ cv_create(const char *name) {
     // add stuff here as needed
 
     return cv;
+#endif
 }
 
 void
 cv_destroy(struct cv *cv) {
+#if OPT_A1
+    KASSERT(cv != NULL);
+
+    /* wchan_cleanup will assert if anyone's waiting on it */
+    spinlock_cleanup(&cv->cv_spinlock);
+    wchan_destroy(cv->cv_wchan);
+    kfree(cv->cv_name);
+    kfree(cv);
+#else
     KASSERT(cv != NULL);
 
     // add stuff here as needed
 
     kfree(cv->cv_name);
     kfree(cv);
+#endif
 }
 
 void
 cv_wait(struct cv *cv, struct lock *lock) {
+#if OPT_A1
+    spinlock_acquire(&cv->cv_spinlock);
+
+    //set our member variable
+    cv->cv_lock = lock;
+
+    //release the lock so that you can go to sleep
+    KASSERT(lock_do_i_hold(cv->cv_lock));
+    lock_release(cv->cv_lock);
+
+    //go to sleep
+    wchan_lock(cv->cv_wchan);
+    spinlock_release(&cv->cv_spinlock);
+    wchan_sleep(cv->cv_wchan);
+
+
+    //upon waking, reacquire the lock
+    lock_acquire(cv->cv_lock);
+
+#else
     // Write this
     (void) cv;    // suppress warning until code gets written
     (void) lock;  // suppress warning until code gets written
+#endif
 }
 
 void
 cv_signal(struct cv *cv, struct lock *lock) {
+#if OPT_A1
+
+    spinlock_acquire(&cv->cv_spinlock);
+    if (lock == cv->cv_lock) {
+        wchan_wakeone(cv->cv_wchan);
+    }
+    spinlock_release(&cv->cv_spinlock);
+#else
     // Write this
     (void) cv;    // suppress warning until code gets written
     (void) lock;  // suppress warning until code gets written
+#endif
 }
 
 void
 cv_broadcast(struct cv *cv, struct lock *lock) {
+#if OPT_A1
+    spinlock_acquire(&cv->cv_spinlock);
+    if (lock == cv->cv_lock) {
+        wchan_wakeall(cv->cv_wchan);
+    }
+    spinlock_release(&cv->cv_spinlock);
+#else
     // Write this
     (void) cv;    // suppress warning until code gets written
     (void) lock;  // suppress warning until code gets written
+#endif
 }
