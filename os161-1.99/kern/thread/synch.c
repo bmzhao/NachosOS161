@@ -251,14 +251,13 @@ lock_release(struct lock *lock) {
     // Write this
 #if OPT_A1
     KASSERT(lock != NULL);
-
+    KASSERT(lock->lk_curthread == curthread);
 
     spinlock_acquire(&lock->lk_lock);
-    if (lock->lk_curthread == curthread){
         lock->lk_value = 1;
         KASSERT(lock->lk_value == 1);
         wchan_wakeone(lock->lk_wchan);
-    }
+        lock->lk_curthread = NULL;
     spinlock_release(&lock->lk_lock);
 #else
 
