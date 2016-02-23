@@ -4,6 +4,7 @@
 #include <synch.h>
 #include <opt-A1.h>
 
+
 /* 
  * This simple default synchronization mechanism allows only creature at a time to
  * eat.   The globalCatMouseSem is used as a a lock.   We use a semaphore
@@ -59,6 +60,8 @@ void decrement_mice_count(void);
 void increment_cat_count(void);
 void increment_mice_count(void);
 
+#define DEBUGPRINT(n) kprintf("%d\n",n);
+
 #else
 static struct semaphore *globalCatMouseSem;
 #endif
@@ -107,26 +110,35 @@ catmouse_sync_init(int bowls)
 
     for (i = 0; i < bowls; i++){
         bowl_locks[i] = lock_create(&bowl_index_chars[i]);
+        KASSERT(bowl_locks[i] != NULL);
     }
 
     current_turn = '-';
     current_turn_lock = lock_create("turn_lock");
+    KASSERT(current_turn_lock != NULL);
 
     num_waiting_cats = 0;
     cat_count_lock = lock_create("cat_lock");
+    KASSERT(cat_count_lock != NULL);
 
     num_waiting_mice = 0;
     mice_count_lock = lock_create("mice_lock");
+    KASSERT(mice_count_lock != NULL);
 
     cat_eating_count_lock = lock_create("cat_eating_count_lock");
+    KASSERT(cat_eating_count_lock != NULL);
     num_eating_cats = 0;
 
     mice_eating_count_lock = lock_create("mice_eating_count_lock");
+    KASSERT(mice_eating_count_lock != NULL);
     num_eating_mice = 0;
     
 
     ok_for_cats = cv_create("ok_for_cats");
     ok_for_mice = cv_create("ok_for_mice");
+
+    DEBUGPRINT(140)
+
 
 #else
     /* replace this default implementation with your own implementation of catmouse_sync_init */
@@ -205,9 +217,14 @@ void
 cat_before_eating(unsigned int bowl)
 {
 #if OPT_A1
+    bowl--;
     char local_current_turn;
+    KASSERT(current_turn_lock != NULL);
+
     lock_acquire(current_turn_lock); //we've acquired turn_lock
     local_current_turn = current_turn;
+
+    DEBUGPRINT(226)
 
     if (local_current_turn == 'c'){
         int mouse_waiting_count = get_mice_count();
@@ -223,6 +240,7 @@ cat_before_eating(unsigned int bowl)
             lock_acquire(bowl_locks[bowl]);
             bowl_array[bowl] = 'c';
         } else {
+            KASSERT(mouse_waiting_count == 0);
             //no mice waiting
             //cat should be able to eat, if bowl is open
             lock_release(current_turn_lock); // we released current turn lock
@@ -248,7 +266,7 @@ cat_before_eating(unsigned int bowl)
         lock_release(current_turn_lock);
 
         lock_acquire(bowl_locks[bowl]); //we released current turn lock
-        bowl_locks[bowl] = 'c';
+        bowl_array[bowl] = 'c';
     }
     increment_cat_eating();
     
@@ -296,8 +314,9 @@ void
 cat_after_eating(unsigned int bowl)
 {
 #if OPT_A1
-
+    bowl--;
     char local_current_turn;
+    KASSERT(current_turn_lock != NULL);
     lock_acquire(current_turn_lock); //we've acquired turn_lock
     local_current_turn = current_turn;
 
@@ -332,10 +351,6 @@ cat_after_eating(unsigned int bowl)
     //else not last cat
         //release your bowl
         //set your bowl to '-'
-
-
-
-
 #else
   /* replace this default implementation with your own implementation of cat_after_eating */
   (void)bowl;  /* keep the compiler from complaining about an unused parameter */
@@ -360,7 +375,12 @@ void
 mouse_before_eating(unsigned int bowl)
 {
 #if OPT_A1
+    bowl--;
     char local_current_turn;
+    KASSERT(current_turn_lock != NULL);
+
+    DEBUGPRINT(379)
+
     lock_acquire(current_turn_lock); //we've acquired turn_lock
     local_current_turn = current_turn;
 
@@ -379,6 +399,7 @@ mouse_before_eating(unsigned int bowl)
             bowl_array[bowl] = 'm';
 
         } else {
+            KASSERT(cat_waiting_count == 0);
             //no cats waiting
             //mice should be able to eat, if bowl is open
             lock_release(current_turn_lock); // we released current turn lock
@@ -404,7 +425,7 @@ mouse_before_eating(unsigned int bowl)
         lock_release(current_turn_lock);
 
         lock_acquire(bowl_locks[bowl]); //we released current turn lock
-        bowl_locks[bowl] = 'm';
+        bowl_array[bowl] = 'm';
     }
     increment_mice_eating();
 #else
@@ -432,8 +453,9 @@ void
 mouse_after_eating(unsigned int bowl)
 {
 #if OPT_A1
-
+    bowl--;
     char local_current_turn;
+    KASSERT(current_turn_lock != NULL);
     lock_acquire(current_turn_lock); //we've acquired turn_lock
     local_current_turn = current_turn;
 
@@ -463,6 +485,7 @@ mouse_after_eating(unsigned int bowl)
 
 #if OPT_A1
 int get_mice_count(void){
+    KASSERT(mice_count_lock != NULL);
     lock_acquire(mice_count_lock);
     int return_value = num_waiting_mice;
     lock_release(mice_count_lock);
@@ -470,6 +493,7 @@ int get_mice_count(void){
 }
 
 int get_cat_count(void) {
+    KASSERT(cat_count_lock != NULL);
     lock_acquire(cat_count_lock);
     int return_value = num_waiting_cats;
     lock_release(cat_count_lock);
@@ -477,6 +501,7 @@ int get_cat_count(void) {
 }
 
 int increment_cat_eating(void) {
+    KASSERT(cat_eating_count_lock != NULL);
     lock_acquire(cat_eating_count_lock);
     num_eating_cats++;
     int return_value = num_eating_cats;
@@ -485,6 +510,7 @@ int increment_cat_eating(void) {
 }
 
 int decrement_cat_eating(void) {
+    KASSERT(cat_eating_count_lock != NULL);
     lock_acquire(cat_eating_count_lock);
     num_eating_cats--;
     int return_value = num_eating_cats;
@@ -493,6 +519,7 @@ int decrement_cat_eating(void) {
 }
 
 int increment_mice_eating(void) {
+    KASSERT(mice_eating_count_lock != NULL);
     lock_acquire(mice_eating_count_lock);
     num_eating_mice++;
     int return_value = num_eating_mice;
@@ -501,6 +528,7 @@ int increment_mice_eating(void) {
 }
 
 int decrement_mice_eating(void) {
+    KASSERT(mice_eating_count_lock != NULL);
     lock_acquire(mice_eating_count_lock);
     num_eating_mice--;
     int return_value = num_eating_mice;
@@ -509,24 +537,28 @@ int decrement_mice_eating(void) {
 }
 
 void increment_mice_count(void){
+    KASSERT(mice_count_lock != NULL);
     lock_acquire(mice_count_lock);
     num_waiting_mice++;
     lock_release(mice_count_lock);
 }
 
 void increment_cat_count(void){
+    KASSERT(cat_count_lock != NULL);
     lock_acquire(cat_count_lock);
     num_waiting_cats++;
     lock_release(cat_count_lock);
 }
 
 void decrement_mice_count(void) {
+    KASSERT(mice_count_lock != NULL);
     lock_acquire(mice_count_lock);
     num_waiting_mice--;
     lock_release(mice_count_lock);
 }
 
 void decrement_cat_count(void) {
+    KASSERT(cat_count_lock != NULL);
     lock_acquire(cat_count_lock);
     num_waiting_cats--;
     lock_release(cat_count_lock);
