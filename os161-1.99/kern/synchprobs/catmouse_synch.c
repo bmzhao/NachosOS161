@@ -231,7 +231,9 @@ cat_before_eating(unsigned int bowl)
         if (mouse_waiting_count > 0){
             //wait until mice are done before approaching the problem
             increment_cat_count();
-            cv_wait(ok_for_cats, current_turn_lock);
+            while (get_mice_count() != 0){
+                cv_wait(ok_for_cats, current_turn_lock);
+            }
             decrement_cat_count();
 
             lock_release(current_turn_lock); //we released current turn lock
@@ -251,7 +253,9 @@ cat_before_eating(unsigned int bowl)
         }
     } else if (local_current_turn == 'm') {
         increment_cat_count();
-        cv_wait(ok_for_cats, current_turn_lock);
+        while(current_turn == 'm'){
+            cv_wait(ok_for_cats, current_turn_lock);
+        }
         decrement_cat_count();
         lock_release(current_turn_lock); //w-e released current turn lock
 
@@ -326,9 +330,9 @@ cat_after_eating(unsigned int bowl)
     if (cat_number == 0) {
         //release the lock
         lock_release(bowl_locks[bowl]);
-        bowl_array[bowl] = '-';
+        bowl_array[bowl] = '-';   // THIS IS WRONG SWITCH ORDER WITH ABOVE LINE
         cv_broadcast(ok_for_mice,current_turn_lock);
-        current_turn = '-';
+        current_turn = '-';   //THIS IS WRONG SWITCH ORDER WITH ABOVE LINE
         lock_release(current_turn_lock);
     } else {
         //release the lock
@@ -389,7 +393,10 @@ mouse_before_eating(unsigned int bowl)
         if (cat_waiting_count > 0){
             //wait until cats are done before approaching the problem
             increment_mice_count();
-            cv_wait(ok_for_mice, current_turn_lock);
+            while (get_cat_count() != 0){ //THIS IS WRONG
+                cv_wait(ok_for_mice, current_turn_lock);
+            }
+
             decrement_mice_count();
             KASSERT(cat_waiting_count == 0);
             lock_release(current_turn_lock); //we released current turn lock
@@ -410,7 +417,9 @@ mouse_before_eating(unsigned int bowl)
         }
     } else if (local_current_turn == 'c') {
         increment_mice_count();
-        cv_wait(ok_for_mice, current_turn_lock);
+        while (current_turn == 'c'){
+            cv_wait(ok_for_mice, current_turn_lock);
+        }
         decrement_mice_count();
         KASSERT(get_cat_count() == 0);
         lock_release(current_turn_lock); //w-e released current turn lock
