@@ -110,23 +110,23 @@ catmouse_sync_init(int bowls)
     }
 
     current_turn = '-';
-    current_turn_lock = lock_create('turn_lock');
+    current_turn_lock = lock_create("turn_lock");
 
     num_waiting_cats = 0;
-    cat_count_lock = lock_create('cat_lock');
+    cat_count_lock = lock_create("cat_lock");
 
     num_waiting_mice = 0;
-    mice_count_lock = lock_create('mice_lock');
+    mice_count_lock = lock_create("mice_lock");
 
-    cat_eating_count_lock = lock_create('cat_eating_count_lock');
+    cat_eating_count_lock = lock_create("cat_eating_count_lock");
     num_eating_cats = 0;
 
-    mice_eating_count_lock = lock_create('mice_eating_count_lock');
+    mice_eating_count_lock = lock_create("mice_eating_count_lock");
     num_eating_mice = 0;
     
 
-    ok_for_cats = cv_create('ok_for_cats');
-    ok_for_mice = cv_create('ok_for_mice');
+    ok_for_cats = cv_create("ok_for_cats");
+    ok_for_mice = cv_create("ok_for_mice");
 
 #else
     /* replace this default implementation with your own implementation of catmouse_sync_init */
