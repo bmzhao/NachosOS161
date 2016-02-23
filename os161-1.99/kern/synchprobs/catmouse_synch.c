@@ -48,16 +48,16 @@ int num_eating_cats;
 struct cv* ok_for_cats;
 struct cv* ok_for_mice;
 
-int get_mice_count();
-int get_cat_count();
-int increment_cat_eating();
-int increment_mice_eating();
-int decrement_cat_eating();
-int decrement_mice_eating();
-void decrement_cat_count();
-void decrement_mice_count();
-void increment_cat_count();
-void increment_mice_count();
+int get_mice_count(void);
+int get_cat_count(void);
+int increment_cat_eating(void);
+int increment_mice_eating(void);
+int decrement_cat_eating(void);
+int decrement_mice_eating(void);
+void decrement_cat_count(void);
+void decrement_mice_count(void);
+void increment_cat_count(void);
+void increment_mice_count(void);
 
 #else
 static struct semaphore *globalCatMouseSem;
@@ -163,6 +163,7 @@ catmouse_sync_cleanup(int bowls)
     }
 
     if (bowl_locks != NULL) {
+        int i;
         for (i = 0; i < bowls; i++){
             lock_destroy(bowl_locks[i]);
         }
@@ -175,7 +176,7 @@ catmouse_sync_cleanup(int bowls)
     lock_destroy(cat_count_lock);
     lock_destroy(mice_count_lock);
     lock_destroy(mice_eating_count_lock);
-    lock_destory(cat_eating_count_lock);
+    lock_destroy(cat_eating_count_lock);
 
     cv_destroy(ok_for_cats);
     cv_destroy(ok_for_mice);
@@ -243,7 +244,7 @@ cat_before_eating(unsigned int bowl)
     } else {
         //if current turn == '-'
 
-        lock_current_turn = 'c';
+        current_turn = 'c';
         lock_release(current_turn_lock);
 
         lock_acquire(bowl_locks[bowl]); //we released current turn lock
@@ -399,13 +400,13 @@ mouse_before_eating(unsigned int bowl)
     } else {
         //if current turn == '-'
 
-        lock_current_turn = 'm';
+        current_turn = 'm';
         lock_release(current_turn_lock);
 
         lock_acquire(bowl_locks[bowl]); //we released current turn lock
         bowl_locks[bowl] = 'm';
     }
-    increment_mouse_eating();
+    increment_mice_eating();
 #else
   /* replace this default implementation with your own implementation of mouse_before_eating */
   (void)bowl;  /* keep the compiler from complaining about an unused parameter */
@@ -461,21 +462,21 @@ mouse_after_eating(unsigned int bowl)
 }
 
 #if OPT_A1
-int get_mice_count(){
+int get_mice_count(void){
     lock_acquire(mice_count_lock);
     int return_value = num_waiting_mice;
     lock_release(mice_count_lock);
     return return_value;
 }
 
-int get_cat_count() {
+int get_cat_count(void) {
     lock_acquire(cat_count_lock);
     int return_value = num_waiting_cats;
     lock_release(cat_count_lock);
     return return_value;
 }
 
-int increment_cat_eating() {
+int increment_cat_eating(void) {
     lock_acquire(cat_eating_count_lock);
     num_eating_cats++;
     int return_value = num_eating_cats;
@@ -483,7 +484,7 @@ int increment_cat_eating() {
     return return_value;
 }
 
-int decrement_cat_eating() {
+int decrement_cat_eating(void) {
     lock_acquire(cat_eating_count_lock);
     num_eating_cats--;
     int return_value = num_eating_cats;
@@ -491,7 +492,7 @@ int decrement_cat_eating() {
     return return_value;
 }
 
-int increment_mice_eating() {
+int increment_mice_eating(void) {
     lock_acquire(mice_eating_count_lock);
     num_eating_mice++;
     int return_value = num_eating_mice;
@@ -499,7 +500,7 @@ int increment_mice_eating() {
     return return_value;
 }
 
-int decrement_mice_eating() {
+int decrement_mice_eating(void) {
     lock_acquire(mice_eating_count_lock);
     num_eating_mice--;
     int return_value = num_eating_mice;
@@ -507,25 +508,25 @@ int decrement_mice_eating() {
     return return_value;
 }
 
-void increment_mice_count(){
+void increment_mice_count(void){
     lock_acquire(mice_count_lock);
     num_waiting_mice++;
     lock_release(mice_count_lock);
 }
 
-void increment_cat_count(){
+void increment_cat_count(void){
     lock_acquire(cat_count_lock);
     num_waiting_cats++;
     lock_release(cat_count_lock);
 }
 
-void decrement_mice_count() {
+void decrement_mice_count(void) {
     lock_acquire(mice_count_lock);
     num_waiting_mice--;
     lock_release(mice_count_lock);
 }
 
-void decrement_cat_count() {
+void decrement_cat_count(void) {
     lock_acquire(cat_count_lock);
     num_waiting_cats--;
     lock_release(cat_count_lock);
