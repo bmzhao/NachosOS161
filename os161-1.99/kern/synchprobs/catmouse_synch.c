@@ -295,29 +295,43 @@ cat_after_eating(unsigned int bowl)
 {
 #if OPT_A1
 
+    char local_current_turn;
+    lock_acquire(current_turn_lock); //we've acquired turn_lock
+    local_current_turn = current_turn;
+
+    KASSERT(local_current_turn == 'c');
+    int cat_number = decrement_cat_eating();
+
+    if (cat_number == 0) {
+        //release the lock
+        lock_release(bowl_locks[bowl]);
+        bowl_array[bowl] = '-';
+        cv_broadcast(ok_for_mice,current_turn_lock);
+        current_turn = '-';
+        lock_release(current_turn_lock);
+    } else {
+        //release the lock
+        lock_release(bowl_locks[bowl]);
+        bowl_array[bowl] = '-';
+        lock_release(current_turn_lock);
+    }
+
     //Pseudocode
+    //kassert that its cat turn
+
     //At the very beginning, decrement cat eating
-    //if cat turn
+    //if result was == 0, we know it was last cat
+        //release your bowl
+        //acquire the turn lock
+        //broadcast ok_for_mice
+        //change the turn lock to '-'
+        //release turn lock
+
+    //else not last cat
+        //release your bowl
+        //set your bowl to '-'
 
 
-        //if num mice waiting > 0
-            //increment num_cats_waiting
-            //wait on condition variable of "ok_for_cat"
-            //decrement num_cats_waiting
-            //try to eat from bowl
-        //if num mice waiting == 0
-            //try to eat from bowl
-
-    //else if mouse turn
-        //increment num_cats_waiting
-        //wait on condition variable of "ok_for_cat"
-        //decrement num_cats_waiting
-        //try to eat from bowl
-
-    //!!NOT NECESSARY
-    //--else dash turn
-       //--set turn variable to 'c'
-       //--get your bowl
 
 
 #else
@@ -431,7 +445,6 @@ int get_mice_count(){
     int return_value = num_waiting_mice;
     lock_release(mice_count_lock);
     return return_value;
-
 }
 
 int get_cat_count() {
@@ -452,19 +465,25 @@ int increment_cat_eating() {
 int decrement_cat_eating() {
     lock_acquire(cat_eating_count_lock);
     num_eating_cats--;
+    int return_value = num_eating_cats;
     lock_release(cat_eating_count_lock);
+    return return_value;
 }
 
 int increment_mice_eating() {
-  lock_acquire(mice_eating_count_lock);
-  num_eating_mice++;
-  lock_release(mice_eating_count_lock);
+    lock_acquire(mice_eating_count_lock);
+    num_eating_mice++;
+    int return_value = num_eating_mice;
+    lock_release(mice_eating_count_lock);
+    return return_value;
 }
 
 int decrement_mice_eating() {
-  lock_acquire(mice_eating_count_lock);
-  num_eating_mice--;
-  lock_release(mice_eating_count_lock);
+    lock_acquire(mice_eating_count_lock);
+    num_eating_mice--;
+    int return_value = num_eating_mice;
+    lock_release(mice_eating_count_lock);
+    return return_value;
 }
 
 void increment_mice_count(){
@@ -484,6 +503,7 @@ void decrement_mice_count() {
     num_waiting_mice--;
     lock_release(mice_count_lock);
 }
+
 void decrement_cat_count() {
     lock_acquire(cat_count_lock);
     num_waiting_cats--;
