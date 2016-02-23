@@ -391,7 +391,7 @@ mouse_before_eating(unsigned int bowl)
             increment_mice_count();
             cv_wait(ok_for_mice, current_turn_lock);
             decrement_mice_count();
-
+            KASSERT(cat_waiting_count == 0);
             lock_release(current_turn_lock); //we released current turn lock
 
             //get the lock for the bowl
@@ -412,6 +412,7 @@ mouse_before_eating(unsigned int bowl)
         increment_mice_count();
         cv_wait(ok_for_mice, current_turn_lock);
         decrement_mice_count();
+        KASSERT(get_cat_count() == 0);
         lock_release(current_turn_lock); //w-e released current turn lock
 
         //try to eat from bowl
@@ -420,7 +421,7 @@ mouse_before_eating(unsigned int bowl)
 
     } else {
         //if current turn == '-'
-
+        KASSERT(get_cat_count() == 0);
         current_turn = 'm';
         lock_release(current_turn_lock);
 
