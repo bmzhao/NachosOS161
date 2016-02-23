@@ -2,6 +2,7 @@
 #include <lib.h>
 #include <synchprobs.h>
 #include <synch.h>
+#include <opt-A1.h>
 
 /* 
  * This simple default synchronization mechanism allows only creature at a time to
@@ -365,7 +366,7 @@ mouse_before_eating(unsigned int bowl)
     if (local_current_turn == 'm'){
         int cat_waiting_count = get_cat_count();
         if (cat_waiting_count > 0){
-            //wait until mice are done before approaching the problem
+            //wait until cats are done before approaching the problem
             increment_mice_count();
             cv_wait(ok_for_mice, current_turn_lock);
             decrement_mice_count();
@@ -377,8 +378,8 @@ mouse_before_eating(unsigned int bowl)
             bowl_array[bowl] = 'm';
 
         } else {
-            //no mice waiting
-            //cat should be able to eat, if bowl is open
+            //no cats waiting
+            //mice should be able to eat, if bowl is open
             lock_release(current_turn_lock); // we released current turn lock
 
              //get the lock for the bowl
@@ -431,6 +432,26 @@ mouse_after_eating(unsigned int bowl)
 {
 #if OPT_A1
 
+    char local_current_turn;
+    lock_acquire(current_turn_lock); //we've acquired turn_lock
+    local_current_turn = current_turn;
+
+    KASSERT(local_current_turn == 'm');
+    int mice_number = decrement_mice_eating();
+
+    if (mice_number == 0) {
+        //release the lock
+        lock_release(bowl_locks[bowl]);
+        bowl_array[bowl] = '-';
+        cv_broadcast(ok_for_cats,current_turn_lock);
+        current_turn = '-';
+        lock_release(current_turn_lock);
+    } else {
+        //release the lock
+        lock_release(bowl_locks[bowl]);
+        bowl_array[bowl] = '-';
+        lock_release(current_turn_lock);
+    }
 #else
   /* replace this default implementation with your own implementation of mouse_after_eating */
   (void)bowl;  /* keep the compiler from complaining about an unused parameter */
