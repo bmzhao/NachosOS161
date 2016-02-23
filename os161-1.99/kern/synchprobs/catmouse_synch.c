@@ -250,14 +250,17 @@ cat_before_eating(unsigned int bowl)
 
             if (current_turn == '-'){
               current_turn = 'c';
+              kprintf("cat changed current turn from - to c");
             }
 
-            decrement_cat_count();
+
 
             lock_release(current_turn_lock); //we released current turn lock
 
             //get the lock for the bowl
+            increment_cat_eating();
             lock_acquire(bowl_locks[bowl]);
+            decrement_cat_count();
             bowl_array[bowl] = 'c';
         } else {
             KASSERT(mouse_waiting_count == 0);
@@ -266,7 +269,10 @@ cat_before_eating(unsigned int bowl)
             lock_release(current_turn_lock); // we released current turn lock
 
              //get the lock for the bowl
+            increment_cat_count();
+            increment_cat_eating();
             lock_acquire(bowl_locks[bowl]);
+            decrement_cat_count();
             bowl_array[bowl] = 'c';
         }
     } else if (local_current_turn == 'm') {
@@ -277,14 +283,17 @@ cat_before_eating(unsigned int bowl)
 
         if (current_turn == '-'){
               current_turn = 'c';
+              kprintf("cat changed current turn from - to c");
         }
 
 
-        decrement_cat_count();
+
         lock_release(current_turn_lock); //w-e released current turn lock
 
         //try to eat from bowl
+        increment_cat_eating();
         lock_acquire(bowl_locks[bowl]);
+        decrement_cat_count();
         bowl_array[bowl] = 'c';
 
     } else {
@@ -292,14 +301,18 @@ cat_before_eating(unsigned int bowl)
         KASSERT(current_turn == '-');
         current_turn = 'c';
         kprintf("current turn changed to - from c, catbeforeeating\n");
+
         lock_release(current_turn_lock);
 
 
-
+        increment_cat_count();
+        increment_cat_eating();
         lock_acquire(bowl_locks[bowl]); //we released current turn lock
+        decrement_cat_count();
+
         bowl_array[bowl] = 'c';
     }
-    increment_cat_eating();
+
     
     //if cat turn
         //if num mice waiting > 0
@@ -351,7 +364,7 @@ cat_after_eating(unsigned int bowl)
     lock_acquire(current_turn_lock); //we've acquired turn_lock
     local_current_turn = current_turn;
 
-    KASSERT(local_current_turn == 'c');
+//    KASSERT(local_current_turn == 'c');
     int cat_number = decrement_cat_eating();
 
     if (cat_number == 0) {
@@ -362,6 +375,7 @@ cat_after_eating(unsigned int bowl)
         current_turn = '-';
         kprintf("current turn changed to c from -\n");
         cv_broadcast(ok_for_mice,current_turn_lock);
+        kprintf("broadcast mice ok-\n");
         lock_release(current_turn_lock);
     } else {
         //release the lock
@@ -433,14 +447,16 @@ mouse_before_eating(unsigned int bowl)
 
             if (current_turn == '-'){
               current_turn = 'm';
+              kprintf("mouse changed current turn from - to m");
             }
 
-            decrement_mice_count();
-            KASSERT(cat_waiting_count == 0);
+
             lock_release(current_turn_lock); //we released current turn lock
 
             //get the lock for the bowl
+            increment_mice_eating();
             lock_acquire(bowl_locks[bowl]);
+            decrement_mice_count();
             bowl_array[bowl] = 'm';
 
         } else {
@@ -450,7 +466,10 @@ mouse_before_eating(unsigned int bowl)
             lock_release(current_turn_lock); // we released current turn lock
 
              //get the lock for the bowl
+             increment_mice_count();
+             increment_mice_eating();
             lock_acquire(bowl_locks[bowl]);
+            decrement_mice_count();
             bowl_array[bowl] = 'm';
         }
     } else if (local_current_turn == 'c') {
@@ -461,14 +480,16 @@ mouse_before_eating(unsigned int bowl)
 
         if (current_turn == '-'){
               current_turn = 'm';
+              kprintf("mouse changed current turn from - to m");
         }
 
-        decrement_mice_count();
-        KASSERT(get_cat_count() == 0);
+
         lock_release(current_turn_lock); //w-e released current turn lock
 
         //try to eat from bowl
+        increment_mice_eating();
         lock_acquire(bowl_locks[bowl]);
+        decrement_mice_count();
         bowl_array[bowl] = 'm';
 
     } else {
@@ -478,10 +499,12 @@ mouse_before_eating(unsigned int bowl)
         kprintf("current turn changed to - from m, mousebeforeeating\n");
         lock_release(current_turn_lock);
 
+        increment_mice_count();
+        increment_mice_eating();
         lock_acquire(bowl_locks[bowl]); //we released current turn lock
+        decrement_mice_count();
         bowl_array[bowl] = 'm';
     }
-    increment_mice_eating();
 #else
   /* replace this default implementation with your own implementation of mouse_before_eating */
   (void)bowl;  /* keep the compiler from complaining about an unused parameter */
@@ -513,7 +536,7 @@ mouse_after_eating(unsigned int bowl)
     lock_acquire(current_turn_lock); //we've acquired turn_lock
     local_current_turn = current_turn;
 
-    KASSERT(local_current_turn == 'm');
+//    KASSERT(local_current_turn == 'm');
     int mice_number = decrement_mice_eating();
 
     if (mice_number == 0) {
@@ -523,6 +546,7 @@ mouse_after_eating(unsigned int bowl)
         current_turn = '-';
         kprintf("current turn changed to m from -\n");
         cv_broadcast(ok_for_cats,current_turn_lock);
+        kprintf("broadcast cat ok-\n");
         lock_release(current_turn_lock);
     } else {
         //release the lock
